@@ -2959,34 +2959,236 @@ present();
 
 </script>
 <script>
-(function(){
-const style=document.createElement('style');
-style.textContent=`
-.v11-capture-wrap{border:1px solid #315c49;border-radius:18px;background:#0b2119;padding:15px;margin-top:18px}
-.v11-capture-table{width:100%;border-collapse:separate;border-spacing:8px;table-layout:fixed}
-.v11-capture-table th{font-size:12px;text-align:left;color:#addec5;letter-spacing:.04em;padding:0 6px 5px}
-.v11-capture-table td{vertical-align:top;background:#102d22;border:1px solid #2d5744;border-radius:12px;padding:10px}
-.v11-picklist{display:flex;flex-direction:column;gap:5px;max-height:480px;overflow:auto}
-.v11-pick{cursor:pointer;text-align:left;background:#183a2c;border:1px solid #315842;color:#dffbe8;padding:8px;border-radius:8px;font-size:12px;min-height:35px}
-.v11-pick:hover{background:#25583f}.v11-pick.active{background:#19a56d;color:#041b13;border-color:#8de6b7;font-weight:900}
-.v11-pick small{display:block;opacity:.8;font-size:10px;margin-top:2px}
-.v11-options{display:flex;flex-direction:column;gap:8px}.v11-options .v11-pick{font-size:13px}
-.v11-zone-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.v11-zone-grid button{background:#20533d;color:#fff;border:1px solid #4e916b;border-radius:9px;min-height:80px;font-size:17px;font-weight:900;cursor:pointer}
-.v11-zone-grid button:hover{background:#26a56d;color:#072618}.v11-zone-grid button small{display:block;font-size:10px;font-weight:500}
-.v11-topline{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-.v11-topline select{background:#14372a;color:#fff;padding:9px;border:1px solid #4c7962;border-radius:9px}
-.v11-context{margin:12px 0;padding:12px 15px;border-radius:10px;background:#173d2e;border:1px solid #4b8063;color:#dffbea;font-size:13px}
-.v11-legend{font-size:12px;color:#9fceb5;margin:10px 3px}
-@media(max-width:900px){.v11-capture-wrap{overflow-x:auto}.v11-capture-table{min-width:1000px}}
-`;
-document.head.appendChild(style);
-function v11Capture(){v10Seed();const v=state.v10,m=liveGame(),official=state.role==='official',side=v.side,sel=roster(side).find(p=>p.id===v.playerId);const actions=['serve','attack','block','reception','set','dig'];const effects=[['#','Point winner / perfect'],['+','Positive'],['!','Playable'],['-','Poor'],['=','Error']];const zoneButtons=[4,3,2,5,6,1].map(z=>`<button data-v11="zone" data-zone="${z}" title="Record action at volleyball zone ${z}">Z${z}<small>Record</small></button>`).join('');const teamCol=s=>`<div class="v11-picklist">${roster(s).map(p=>`<button type="button" class="v11-pick ${side===s&&v.playerId===p.id?'active':''}" data-v11="player" data-side="${s}" data-player="${p.id}">#${p.number} ${esc(p.name)}<small>${esc(p.position)}</small></button>`).join('')}</div>`;
-const recent=[...m.events.filter(x=>x.origin==='v10-court'||x.v10Capture),...state.teamScoutEvents.filter(x=>x.source==='v10-court')].slice(-10).reverse();return `${v3PageTitle()}${v3Hero('One-table Court Recorder','Choose a player from either team, then the action and outcome. Click a court-zone button to save the event immediately. No player, action, or outcome dropdowns.')}<div class="v11-topline"><div class="v11-legend">${official?'Match Official: only winning point actions can change the official score.':'Team Statistician: technical observations remain private and never change the official score.'}</div><div>${official?`<label>Official capture <select id="v11-mode"><option value="annotate" ${v.pickMode==='annotate'?'selected':''}>Tag latest rally (no extra point)</option><option value="point" ${v.pickMode==='point'?'selected':''}>New scoring action</option></select></label>`:`<label>Session <select id="v11-session"><option value="match" ${state.v6.stage==='match'?'selected':''}>Match observation</option><option value="training" ${state.v6.stage==='training'?'selected':''}>Training observation</option></select></label>`}</div></div><div class="v11-context">Selected: <b>${sel?esc(sel.name):'Choose a player'}</b> · Team: <b>${esc(side==='home'?m.home:m.away)}</b> · Action: <b>${esc(v.action||'serve')}</b> · Outcome: <b>${esc(effects.find(x=>x[0]===v.effect)?.[1]||'Positive')}</b> · Click a zone to record.</div><section class="v11-capture-wrap"><table class="v11-capture-table"><colgroup><col style="width:23%"><col style="width:23%"><col style="width:16%"><col style="width:20%"><col style="width:18%"></colgroup><thead><tr><th>1. ${esc(m.home)} players</th><th>2. ${esc(m.away)} players</th><th>3. Action</th><th>4. Outcome</th><th>5. Court zone · SAVE</th></tr></thead><tbody><tr><td>${teamCol('home')}</td><td>${teamCol('away')}</td><td><div class="v11-options">${actions.map(a=>`<button class="v11-pick ${v.action===a?'active':''}" data-v11="action" data-value="${a}">${a[0].toUpperCase()+a.slice(1)}</button>`).join('')}</div></td><td><div class="v11-options">${effects.map(([k,t])=>`<button class="v11-pick ${v.effect===k?'active':''}" data-v11="effect" data-value="${k}">${esc(t)}</button>`).join('')}</div></td><td><div class="v11-zone-grid">${zoneButtons}</div><div class="v11-legend">Front: Z4 Z3 Z2; Back: Z5 Z6 Z1. A zone click saves one observation.</div></td></tr></tbody></table></section><div class="v11-legend">Reception and digs use contact zone; attacks and serves use landing/target zone. A libero cannot be assigned an illegal attack, block or serve. Changes are held in the local prototype database.</div><section class="v10-panel section"><h3>Recent recorded court actions</h3>${recent.map(e=>`<div class="overviewrow"><b>${esc(e.playerName||'Team')} · ${esc(e.action||e.skill||'Action')}</b><span>Zone ${esc(e.endZone||e.startZone||'?')}</span></div>`).join('')||'<p>No new court observations yet.</p>'}<div class="v10-tools"><button data-page="court">See heatmap</button><button data-page="${official?'overview':'reports'}">${official?'Back to scoring desk':'View scouting report'}</button></div></section>`;}
-const oldRoute=v3NewPages;v3NewPages=function(){if(state.sport==='volleyball'&&state.page==='locationCapture'&&['official','statistician'].includes(state.role))return v11Capture();return oldRoute();};
-document.addEventListener('click',function(e){const b=e.target.closest('[data-v11]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();v10Seed();let t=b.dataset.v11;if(t==='player'){state.v10.side=b.dataset.side;state.v10.playerId=b.dataset.player;}else if(t==='action'){state.v10.action=b.dataset.value;}else if(t==='effect'){state.v10.effect=b.dataset.value;}else if(t==='zone'){if(!state.v10.playerId){toast('Select one player from either team first.',true);return;}v10RecordZone(b.dataset.zone);return;}save();present();},true);
-document.addEventListener('change',function(e){if(e.target.id==='v11-mode'){state.v10.pickMode=e.target.value;save();present();}if(e.target.id==='v11-session'){state.v6.stage=e.target.value;save();present();}});
-present();
+/* AthletePath 360 V12 - Functional court recorder for both official and statistician.
+   This module intentionally uses the shared application state and public (global)
+   data functions only; it does not reference V10's private IIFE functions. */
+(function () {
+  'use strict';
+  const st = document.createElement('style');
+  st.textContent = `
+  .v12-frame{border:1px solid #306048;border-radius:17px;background:#0c241b;padding:16px;margin-top:18px}
+  .v12-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin:13px 0}
+  .v12-mode{display:flex;flex-wrap:wrap;gap:8px}.v12-mode button,.v12-control{background:#122d22;color:#d9f7e6;border:1px solid #426e53;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:750;font-size:12px}
+  .v12-mode button.active,.v12-control.active{background:#32c48b;color:#052319;border-color:#63e9b1}
+  .v12-state{background:#174132;border:1px solid #3c8c67;border-radius:12px;padding:13px 15px;font-size:13px;color:#d7ffea;line-height:1.7;margin:14px 0}
+  .v12-state strong{color:#fff}.v12-recorded{background:#0d5039;border:1px solid #58dc9e;color:#e7fff1;padding:11px 14px;border-radius:12px;font-size:13px;margin-top:12px}
+  .v12-main-scroll{overflow-x:auto;max-width:100%;border-radius:14px;border:1px solid #2f6249}
+  .v12-table{width:100%;min-width:1020px;table-layout:fixed;border-collapse:separate;border-spacing:0;background:#102e22}
+  .v12-table th{position:sticky;top:0;background:#1a4b35;color:#e4fff0;padding:13px 10px;font-size:12px;text-align:left;border-bottom:1px solid #508267}
+  .v12-table th:nth-child(1),.v12-table th:nth-child(2){width:24%}.v12-table th:nth-child(3){width:17%}.v12-table th:nth-child(4){width:19%}.v12-table th:nth-child(5){width:16%}
+  .v12-table td{padding:10px;border-right:1px solid #345843;vertical-align:top}.v12-table td:last-child{border-right:0}
+  .v12-list{display:flex;flex-direction:column;gap:6px;max-height:540px;overflow:auto;scrollbar-width:thin}
+  .v12-btn{display:block;width:100%;text-align:left;background:#163c2d;color:#edfff2;border:1px solid #396850;border-radius:9px;padding:10px 9px;cursor:pointer;font-weight:680;font-size:12px;line-height:1.3}
+  .v12-btn:hover,.v12-zone button:hover{background:#245e43;border-color:#a9f7d0}.v12-btn.active{background:#39bc81;color:#062317;border-color:#a2ffcf}
+  .v12-btn:disabled{opacity:.32;cursor:not-allowed}.v12-btn small{display:block;font-size:10px;opacity:.8;margin-top:3px;font-weight:500}
+  .v12-optionlist{display:flex;flex-direction:column;gap:9px}
+  .v12-zone{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.v12-zone button{background:#206947;color:#f5fffa;border:1px solid #65a982;border-radius:11px;min-height:78px;cursor:pointer;font-size:21px;font-weight:900}.v12-zone button small{display:block;font-size:10px;font-weight:550;color:#cdf4de;margin-top:3px}
+  .v12-note{font-size:12px;color:#aed9c4;line-height:1.6;margin-top:12px}.v12-legend{display:flex;gap:15px;flex-wrap:wrap;color:#c5e9d5;font-size:12px;margin-top:12px}
+  .v12-toolrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.v12-toolrow button{background:#1b4735;color:#e5ffef;border:1px solid #498d67;border-radius:9px;padding:9px 13px;cursor:pointer}
+  .v12-history{border:1px solid #335f49;border-radius:14px;padding:14px;background:#0f2b21;margin-top:14px}.v12-history h3{margin:0 0 10px}.v12-history-line{display:flex;gap:16px;justify-content:space-between;border-bottom:1px solid #2c5b44;padding:8px 3px;font-size:12px;color:#e4f9e9}.v12-history-line:last-child{border-bottom:0}
+  [data-v12]:focus-visible{outline:3px solid #ffe57a;outline-offset:2px}
+  @media(max-width:1100px){.v12-frame{padding:10px}.v12-table{min-width:1020px}}
+  `;
+  document.head.appendChild(st);
+
+  const actionNames = [
+    ['serve','Service','S'],['attack','Attack','A'],['block','Block','B'],
+    ['reception','Reception','R'],['set','Setting','E'],['dig','Dig / Defense','D']
+  ];
+  const grades = [
+    ['#','Winner / Perfect'],['+','Positive'],['!','Playable'],['-','Poor'],['=','Own Error']
+  ];
+  const pointSkill = {serve:'Ace',attack:'Attack kill',block:'Block point'};
+  const reverse = side => side==='home'?'away':'home';
+  const nameSide = side => side==='home'?liveGame().home:liveGame().away;
+  const players = side => side==='home'?liveGame().homeRoster:liveGame().awayRoster;
+  const code = action => (actionNames.find(row=>row[0]===action)||[])[2]||'D';
+  const isContact = action => ['reception','dig','block'].includes(action);
+  const timeNow = () => new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const allowed = (player,action) => !!player && !(player.position==='Libero'&&['serve','attack','block'].includes(action));
+
+  function v12State(){
+    const v = state.v12 ||= {side:'home',playerId:'',action:'serve',grade:'#',officialMode:'new',status:'',lastGroup:''};
+    if(!['home','away'].includes(v.side))v.side='home';
+    if(!actionNames.some(a=>a[0]===v.action))v.action='serve';
+    if(!grades.some(g=>g[0]===v.grade))v.grade='#';
+    if(!['new','attach'].includes(v.officialMode))v.officialMode='new';
+    if(!players(v.side).some(p=>p.id===v.playerId))v.playerId='';
+    state.v6 ||= {};
+    state.v6.stage ||= 'match';
+    state.v6.reportMode ||= 'match';
+    state.v6.sessionId ||= 'training-2026-10-22';
+    state.teamScoutEvents ||= [];
+    return v;
+  }
+  function selected(){const v=v12State();return players(v.side).find(p=>p.id===v.playerId)||null;}
+  function locationFields(zone,action){
+    const z=String(zone);
+    return {startZone:isContact(action)?z:'',endZone:action==='block'?z:(isContact(action)?'':z),locationType:action==='block'?'block-contact-zone':(isContact(action)?'contact-zone':'target-zone'),courtZone:z};
+  }
+  function persist(type,description,message){
+    if(typeof v3Audit==='function')v3Audit(type,description);
+    state.v12.status=message;
+    save();present();toast(message);
+  }
+  function statusMessageForAction(p,action,grade,zone,scoreText='Score unchanged'){
+    return `${p.name}: ${action} (${grades.find(x=>x[0]===grade)?.[1]||grade}) in Z${zone}. ${scoreText}.`;
+  }
+  function matchDone(){const m=liveGame();return matchDerived(m).final||m.status==='final';}
+
+  function recordOfficial(zone,player,v){
+    const m=liveGame(),loc=locationFields(zone,v.action),v6=state.v6||{},now=timeNow();
+    const match=matchDerived(m);const ps=pointSkill[v.action];
+    if(v.officialMode==='attach'){
+      const wantScorer= v.grade==='#' && !!ps;
+      const entry=[...m.events].reverse().find(e=>{
+        if(e.side!==v.side||e.playerId!==player.id)return false;
+        if(wantScorer)return e.kind==='rally'&&e.skill===ps;
+        return e.kind==='skill'&&e.skill===code(v.action)&&e.effect===v.grade;
+      });
+      if(!entry){toast('No matching official event for this player, action and outcome. Choose Record new action.',true);return false;}
+      if(entry.v12Capture){toast('This action already has a court zone. Record another action or edit it from the audit history.',true);return false;}
+      Object.assign(entry,loc,{v12Capture:true,locationSource:'v12-recorder'});
+      persist('Official location attribution',`${player.name} · ${v.action} · Z${zone}`,`Location tagged for ${player.name}. Score unchanged.`);
+      return true;
+    }
+    if(matchDone()){toast('This match is finished. No additional official events can be recorded.',true);return false;}
+    const group=uid();
+    const base={set:match.current,side:v.side,playerId:player.id,playerName:player.name,time:now,origin:'v12-recorder',v12Capture:true,groupId:group,...loc};
+    if(v.grade==='='){
+      // Own-side error is logged first, then exactly one opponent rally point.
+      m.events.push({id:uid(),kind:'skill',skill:code(v.action),action:v.action,effect:'=',note:'Own-team error',...base});
+      m.events.push({id:uid(),kind:'rally',set:match.current,side:reverse(v.side),playerId:'',playerName:'',skill:'Opponent error',faultSide:v.side,faultType:code(v.action),time:now,note:`${nameSide(v.side)} error - point to ${nameSide(reverse(v.side))}`,origin:'v12-recorder',groupId:group});
+      v.lastGroup=group;
+      persist('Official error',`${player.name} ${v.action} error; opponent awarded point`,`Own error by ${player.name}: +1 point for ${nameSide(reverse(v.side))}.`);
+      return true;
+    }
+    if(v.grade==='#' && ps){
+      m.events.push({id:uid(),kind:'rally',skill:ps,note:'One-click scored and located rally',...base});
+      v.lastGroup=group;
+      persist('Official point',`${player.name} ${ps} in zone ${zone}`,`${nameSide(v.side)} +1: ${ps} by ${player.name}, Z${zone}.`);
+      return true;
+    }
+    m.events.push({id:uid(),kind:'skill',skill:code(v.action),action:v.action,effect:v.grade,note:'Technical observation (no rally score)',...base});
+    v.lastGroup=group;
+    persist('Official skill observation',`${player.name} ${v.action} ${v.grade} Z${zone}`,statusMessageForAction(player,v.action,v.grade,zone));
+    return true;
+  }
+
+  function recordStatistician(zone,player,v){
+    const m=liveGame(),v6=state.v6,session=v6.stage==='training'?'training':'match',loc=locationFields(zone,v.action),group=uid();
+    const row={id:uid(),groupId:group,mode:session,sport:'volleyball',side:v.side,
+      matchId:session==='match'?m.id:null,sessionId:session==='training'?v6.sessionId:null,
+      playerId:player.id,playerName:player.name,playerPosition:player.position,
+      action:v.action,effect:v.grade,rotation:Number(v6.rotation||1),phase:v6.phase||'Receive',
+      targetPlayerId:v.action==='set'?(v6.setterTarget||''):'',
+      rallyIndex:session==='match'?Math.max(1,matchDerived(m).history.length):null,
+      drill:session==='training'?(v6.drill||'Position-specific skill observation'):'',
+      source:'v12-recorder',date:new Date().toISOString().slice(0,10),time:timeNow(),...loc};
+    state.teamScoutEvents.push(row);
+    v6.side=v.side;v6.reportSide=v.side;v6.reportMode=session;
+    v.lastGroup=group;
+    persist('Team court scouting',`${session}: ${player.name} ${v.action} ${v.grade} Z${zone}`,statusMessageForAction(player,v.action,v.grade,zone,`${session==='match'?'Match scouting':'Training'} saved; official score unchanged`));
+    return true;
+  }
+  function record(zone){
+    const v=v12State(),p=selected();
+    if(!['1','2','3','4','5','6'].includes(String(zone)))return;
+    if(state.sport!=='volleyball'||!['official','statistician'].includes(state.role))return;
+    if(!p){toast('Choose a player from one of the first two columns.',true);return;}
+    if(!allowed(p,v.action)){toast(`The ${v.action} action is not permitted for a libero in this demo. Choose reception, setting or dig.`,true);return;}
+    if(state.role==='official')recordOfficial(String(zone),p,v);
+    else recordStatistician(String(zone),p,v);
+  }
+  function undoLast(){
+    const v=v12State(),g=v.lastGroup;if(!g){toast('No newly recorded action to undo.',true);return;}
+    if(state.role==='official'){
+      const m=liveGame(),items=m.events.filter(e=>e.groupId===g);
+      if(!items.length){toast('No new official event to undo.',true);return;}
+      const last=m.events.at(-1);
+      if(last.groupId!==g){toast('Other events were entered afterward. Review the official audit before correcting.',true);return;}
+      m.events=m.events.filter(e=>e.groupId!==g);
+    }else{
+      const n=state.teamScoutEvents.length-1;
+      if(n<0||state.teamScoutEvents[n].groupId!==g){toast('Only the latest scouting observation can be undone.',true);return;}
+      state.teamScoutEvents.pop();
+    }
+    v.lastGroup='';
+    persist('Court recorder undo','Removed latest entered action','Last recorded action removed.');
+  }
+  function counter(side,mode){
+    if(mode==='official')return liveGame().events.filter(e=>e.origin==='v12-recorder'&&e.side===side).length;
+    const m=liveGame();return state.teamScoutEvents.filter(e=>e.source==='v12-recorder'&&e.side===side&&(state.v6.stage==='match'?e.matchId===m.id:e.sessionId===state.v6.sessionId)).length;
+  }
+  function v12Recent(){
+    const m=liveGame(),rows=state.role==='official'?m.events.filter(e=>e.origin==='v12-recorder' && e.kind!=='team-error').slice(-9).reverse():state.teamScoutEvents.filter(e=>e.source==='v12-recorder'&&e.mode===state.v6.stage).slice(-9).reverse();
+    return rows.length?rows.map(e=>`<div class="v12-history-line"><span>${esc(e.playerName||nameSide(e.side))} · ${esc(e.action||e.skill)} · ${esc(e.effect||'Point')}</span><b>${esc(e.courtZone||e.startZone||e.endZone||'—')}</b></div>`).join(''):'<p class="v12-note">No manually recorded court events yet.</p>';
+  }
+  function teamList(side,v){
+    return `<div class="v12-list">${players(side).map(p=>{
+      const active=v.side===side&&v.playerId===p.id;
+      return `<button type="button" class="v12-btn ${active?'active':''}" data-v12="player" data-side="${side}" data-player="${esc(p.id)}" aria-pressed="${active}" aria-label="Select #${esc(p.number)} ${esc(p.name)} ${esc(p.position)}">#${esc(p.number)} ${esc(p.name)}<small>${esc(p.position)}</small></button>`;
+    }).join('')}</div>`;
+  }
+  function v12Recorder(){
+    const v=v12State(),m=liveGame(),p=selected(),d=matchDerived(m),isOfficial=state.role==='official';
+    const modes=isOfficial?[['new','Record new action'],['attach','Tag existing event (no score)']]:[['match','Match scouting'],['training','Training scouting']];
+    const activeMode=isOfficial?v.officialMode:state.v6.stage;
+    const scoreNote=isOfficial?`Set ${d.current} · Current score ${d.score[0]}–${d.score[1]} · Sets ${d.wins[0]}–${d.wins[1]}`:`${state.v6.stage==='match'?'Match scouting':'Training scouting'} · Official scoreboard stays unchanged`;
+    const locationLabel=isContact(v.action)?'Contact zone':'Landing / target zone';
+    const scoreExplanation=isOfficial?`A <b>Winner / Perfect</b> serve, attack or block gives your selected player's team +1. An <b>Own Error</b> gives the opponent +1. Other skill ratings do not score.`:`Technical data go into the ${state.v6.stage==='training'?'training':'match'} scouting dataset, without awarding public points.`;
+    return `${v3PageTitle()}${v3Hero('Court Recorder · Five-column quick capture','Select one player, choose the skill and outcome, then click the court zone to save immediately. Each column remains visible together.')}
+    <div class="v12-bar"><div><b>${esc(m.home)} vs ${esc(m.away)}</b><div class="v12-note">${esc(scoreNote)}</div></div><div class="v12-mode">${modes.map(([key,label])=>`<button type="button" class="${activeMode===key?'active':''}" data-v12="mode" data-value="${key}" aria-pressed="${activeMode===key}">${esc(label)}</button>`).join('')}</div></div>
+    <div class="v12-state">Selected athlete: <strong>${p?esc(p.name):'Choose a player'}</strong> &nbsp; | &nbsp; Action: <strong>${esc(actionNames.find(a=>a[0]===v.action)?.[1])}</strong> &nbsp; | &nbsp; Outcome: <strong>${esc(grades.find(g=>g[0]===v.grade)?.[1])}</strong> &nbsp; | &nbsp; Zone meaning: <strong>${locationLabel}</strong>. ${scoreExplanation}</div>
+    <div class="v12-frame"><div class="v12-main-scroll"><table class="v12-table"><thead><tr><th>1 · ${esc(m.home)} players</th><th>2 · ${esc(m.away)} players</th><th>3 · Action</th><th>4 · Outcome</th><th>5 · Court Zone — Save</th></tr></thead><tbody><tr><td>${teamList('home',v)}</td><td>${teamList('away',v)}</td><td><div class="v12-optionlist">${actionNames.map(([key,label])=>`<button type="button" class="v12-btn ${v.action===key?'active':''}" data-v12="action" data-value="${key}" aria-pressed="${v.action===key}" ${p&&!allowed(p,key)?'disabled':''}>${esc(label)}</button>`).join('')}</div></td><td><div class="v12-optionlist">${grades.map(([key,label])=>`<button type="button" class="v12-btn ${v.grade===key?'active':''}" data-v12="grade" data-value="${esc(key)}" aria-pressed="${v.grade===key}">${esc(label)}</button>`).join('')}</div></td><td><div class="v12-zone">${[4,3,2,5,6,1].map(n=>`<button type="button" data-v12="zone" data-zone="${n}" aria-label="Save the selected action at Zone ${n}">Z${n}<small>Click to save</small></button>`).join('')}</div><div class="v12-note">Front row: 4–3–2. Back row: 5–6–1. One zone click records one action.</div></td></tr></tbody></table></div><div class="v12-legend"><span>● Green selection = active player/action/outcome</span><span>● ${locationLabel} recorded for chosen action</span><span>● All events marked with original data source</span></div></div>
+    ${v.status?`<div class="v12-recorded" role="status">✓ ${esc(v.status)}</div>`:''}
+    <div class="v12-toolrow"><button type="button" data-v12="undo">Undo last new recording</button><button type="button" data-page="court">Review court heatmap</button><button type="button" data-page="${isOfficial?'overview':'reports'}">${isOfficial?'Scoring desk':'Scouting report'}</button></div>
+    <div class="v12-history"><h3>Recorded locations</h3><div class="v12-legend"><span>${esc(m.home)}: ${counter('home',isOfficial?'official':'private')} actions</span><span>${esc(m.away)}: ${counter('away',isOfficial?'official':'private')} actions</span></div>${v12Recent()}</div>`;
+  }
+  // Replace only the Court Location Recorder route; other 13 role modules are preserved.
+  const before=v3NewPages;
+  v3NewPages=function(){
+    if(state.sport==='volleyball' && state.page==='locationCapture' && ['official','statistician'].includes(state.role))return v12Recorder;
+    return before();
+  };
+  document.addEventListener('click',function(e){
+    const b=e.target.closest('[data-v12]');
+    if(!b||state.page!=='locationCapture'||!['official','statistician'].includes(state.role))return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const v=v12State(),act=b.dataset.v12;
+    if(act==='player'){
+      const side=b.dataset.side,p=players(side).find(x=>x.id===b.dataset.player);if(!p)return;
+      v.side=side;v.playerId=p.id;
+      if(!allowed(p,v.action))v.action='reception';
+      v.status='';save();present();return;
+    }
+    if(act==='action'){
+      const p=selected(),key=b.dataset.value;
+      if(!actionNames.some(x=>x[0]===key)||(p&&!allowed(p,key)))return;
+      v.action=key;v.status='';save();present();return;
+    }
+    if(act==='grade'){v.grade=b.dataset.value;v.status='';save();present();return;}
+    if(act==='mode'){
+      if(state.role==='official')v.officialMode=b.dataset.value;
+      else {state.v6.stage=b.dataset.value;state.v6.reportMode=b.dataset.value;}
+      v.status='';save();present();return;
+    }
+    if(act==='zone'){record(b.dataset.zone);return;}
+    if(act==='undo'){undoLast();return;}
+  },true);
+  const previousPresent = present;
+  present = function(){
+    previousPresent();
+    if(state.sport==='volleyball' && state.page==='locationCapture' && ['official','statistician'].includes(state.role)){
+      for(const item of document.querySelectorAll('.body-main .chip.blue')){
+        if(/Audited prototype|Integrated prototype/.test(item.textContent||''))item.textContent='V12 · Recorder Fixed';
+      }
+    }
+  };
+  document.title='AthletePath 360 | Version 12 Court Recorder';
+  present();
 })();
+
 </script>
 </body>
 </html>
